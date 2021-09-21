@@ -19,7 +19,8 @@ import (
 )
 
 var renderOpts struct {
-	ConfigFN string
+	ConfigFN  string
+	Namespace string
 }
 
 //go:embed versions.yaml
@@ -50,9 +51,12 @@ A config file is required which can be generated with the init command.`,
 			return err
 		}
 
+		namespace, _ := cmd.PersistentFlags().GetString("namespace")
+
 		ctx := &common.RenderContext{
 			Config:          *cfg,
 			VersionManifest: versionMF,
+			Namespace:       namespace,
 		}
 
 		var renderable common.RenderFunc
@@ -89,4 +93,5 @@ func init() {
 	rootCmd.AddCommand(renderCmd)
 
 	renderCmd.PersistentFlags().StringVarP(&renderOpts.ConfigFN, "config", "c", os.Getenv("GITPOD_INSTALLER_CONFIG"), "path to the config file")
+	renderCmd.PersistentFlags().StringVarP(&renderOpts.Namespace, "namespace", "n", "default", "namespace to deploy to")
 }

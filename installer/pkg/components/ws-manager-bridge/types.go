@@ -1,11 +1,32 @@
 package wsmanagerbridge
 
 import (
-	"encoding/base64"
-	"encoding/json"
-	"fmt"
 	"github.com/gitpod-io/gitpod/installer/pkg/common"
 )
+
+// Configuration from components/ws-manager-bridge/src/config.ts
+type Configuration struct {
+	Installation                        string             `json:"installation"`
+	StaticBridges                       []WorkspaceCluster `json:"staticBridges"`
+	ClusterService                      ClusterService     `json:"clusterService"`
+	WSClusterDBReconcileIntervalSeconds int32              `json:"wsClusterDBReconcileIntervalSeconds"`
+	ControllerIntervalSeconds           int32              `json:"controllerIntervalSeconds"`
+	ControllerMaxDisconnectSeconds      int32              `json:"controllerMaxDisconnectSeconds"`
+	MaxTimeToRunningPhaseSeconds        int32              `json:"maxTimeToRunningPhaseSeconds"`
+	Timeouts                            Timeouts           `json:"timeouts"`
+}
+
+type ClusterService struct {
+	Port int32  `json:"port"`
+	Host string `json:"host"`
+}
+
+type Timeouts struct {
+	MetaInstanceCheckIntervalSeconds int32 `json:"metaInstanceCheckIntervalSeconds"`
+	PreparingPhaseSeconds            int32 `json:"preparingPhaseSeconds"`
+	StoppingPhaseSeconds             int32 `json:"stoppingPhaseSeconds"`
+	UnknownPhaseSeconds              int32 `json:"unknownPhaseSeconds"`
+}
 
 // WorkspaceCluster from components/gitpod-protocol/src/workspace-cluster.ts
 type WorkspaceCluster struct {
@@ -54,14 +75,3 @@ const (
 	AdmissionConstraintPermissionNewWorkspaceCluster AdmissionConstraintPermission = "new-workspace-cluster"
 	AdmissionConstraintPermissionTeamsAndProjects    AdmissionConstraintPermission = "teams-and-projects"
 )
-
-func GenerateWorkspaceManagerListForEnvVar(cluster *WorkspaceCluster) (*string, error) {
-	fc, err := json.MarshalIndent(cluster, "", " ")
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal WorkspaceManagerList config: %w", err)
-	}
-
-	str := base64.StdEncoding.EncodeToString(fc)
-
-	return &str, nil
-}

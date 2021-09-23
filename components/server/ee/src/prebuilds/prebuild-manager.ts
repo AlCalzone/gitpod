@@ -5,7 +5,7 @@
  */
 
 import { DBWithTracing, TracedWorkspaceDB, WorkspaceDB } from '@gitpod/gitpod-db/lib';
-import { CommitContext, Project, StartPrebuildContext, StartPrebuildResult, User, WorkspaceConfig, WorkspaceInstance } from '@gitpod/gitpod-protocol';
+import { CommitContext, Project, StartPrebuildContext, StartPrebuildResult, PrebuiltWorkspace, User, WorkspaceConfig, WorkspaceInstance, HeadlessWorkspaceEvent, HeadlessWorkspaceEventType } from '@gitpod/gitpod-protocol';
 import { log } from '@gitpod/gitpod-protocol/lib/util/logging';
 import { TraceContext } from '@gitpod/gitpod-protocol/lib/util/tracing';
 import { inject, injectable } from 'inversify';
@@ -14,6 +14,7 @@ import { HostContextProvider } from '../../../src/auth/host-context-provider';
 import { WorkspaceFactory } from '../../../src/workspace/workspace-factory';
 import { ConfigProvider } from '../../../src/workspace/config-provider';
 import { WorkspaceStarter } from '../../../src/workspace/workspace-starter';
+import { MessageBusIntegration } from '../../../src/workspace/messagebus-integration';
 import { Config } from '../../../src/config';
 
 export class WorkspaceRunningError extends Error {
@@ -36,6 +37,7 @@ export class PrebuildManager {
     @inject(TracedWorkspaceDB) protected readonly workspaceDB: DBWithTracing<WorkspaceDB>;
     @inject(WorkspaceFactory) protected readonly workspaceFactory: WorkspaceFactory;
     @inject(WorkspaceStarter) protected readonly workspaceStarter: WorkspaceStarter;
+    @inject(MessageBusIntegration) protected readonly messageBus: MessageBusIntegration;
     @inject(HostContextProvider) protected readonly hostContextProvider: HostContextProvider;
     @inject(ConfigProvider) protected readonly configProvider: ConfigProvider;
     @inject(Config) protected readonly config: Config;
@@ -69,7 +71,7 @@ export class PrebuildManager {
             if (!!existingPB) {
                 // If the prebuild is failed, we want to retrigger it.
                 if (existingPB.state !== 'aborted' && existingPB.state !== 'timeout' && !existingPB.error) {
-                    return { wsid: existingPB.buildWorkspaceId, done: true };
+                    return { prebuildId: existingPB.id, wsid: existingPB.buildWorkspaceId, done: true };
                 }
             }
 
@@ -97,6 +99,7 @@ export class PrebuildManager {
             log.debug("Created prebuild context", prebuildContext);
 
             const workspace = await this.workspaceFactory.createForContext({span}, user, prebuildContext, contextURL);
+            const prebuildPromise = this.workspaceDB.trace({span}).findPrebuildByWorkspaceID(workspace.id)!;
 
             // const canBuildNow = await this.prebuildRateLimiter.canBuildNow({ span }, user, cloneURL);
             // if (!canBuildNow) {
@@ -107,7 +110,8 @@ export class PrebuildManager {
 
             span.setTag("starting", true);
             await this.workspaceStarter.startWorkspace({ span }, workspace, user, [], {excludeFeatureFlags: ['full_workspace_backup']});
-            return { wsid: workspace.id, done: false };
+            const prebuild = (await prebuildPromise)!;
+            return { prebuildId: prebuild.id, wsid: workspace.id, done: false };
         } catch (err) {
             TraceContext.logError({ span }, err);
             throw err;
@@ -120,18 +124,43 @@ export class PrebuildManager {
         const span = TraceContext.startSpan("retriggerPrebuild", ctx);
         span.setTag("workspaceId", workspaceId);
         try {
+            const workspacePromise = this.workspaceDB.trace({ span }).findById(workspaceId);
+            const prebuildPromise = this.workspaceDB.trace({ span }).findPrebuildByWorkspaceID(workspaceId);
             const runningInstance = await this.workspaceDB.trace({ span }).findRunningInstance(workspaceId);
             if (runningInstance !== undefined) {
                 throw new WorkspaceRunningError('Workspace is still runnning', runningInstance);
             }
             span.setTag("starting", true);
-            const workspace = await this.workspaceDB.trace({ span }).findById(workspaceId);
+            const workspace = await workspacePromise;
             if (!workspace) {
                 console.error('Unknown workspace id.', { workspaceId });
                 throw new Error('Unknown workspace ' + workspaceId);
             }
+            const prebuild = (await prebuildPromise)!;
             await this.workspaceStarter.startWorkspace({ span }, workspace, user);
-            return { wsid: workspace.id, done: false };
+            return { prebuildId: prebuild.id, wsid: workspace.id, done: false };
+        } catch (err) {
+            TraceContext.logError({ span }, err);
+            throw err;
+        } finally {
+            span.finish();
+        }
+    }
+
+    async cancelPrebuild(ctx: TraceContext, user: User, prebuild: PrebuiltWorkspace): Promise<void> {
+        const span = TraceContext.startSpan("cancelPrebuild", ctx);
+        span.setTag("prebuildId", prebuild.id);
+        try {
+            if (prebuild.state === 'aborted' || prebuild.state === 'timeout' || prebuild.state === 'available') {
+                return;
+            }
+            prebuild.state = 'aborted';
+            prebuild.error = 'Cancelled manually';
+            await this.workspaceDB.trace({ span }).storePrebuiltWorkspace(prebuild);
+            await this.messageBus.notifyHeadlessUpdate({ span }, user.id, prebuild.buildWorkspaceId, <HeadlessWorkspaceEvent>{
+                type: HeadlessWorkspaceEventType.Aborted,
+                workspaceID: prebuild.buildWorkspaceId,
+            });
         } catch (err) {
             TraceContext.logError({ span }, err);
             throw err;

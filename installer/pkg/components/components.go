@@ -10,6 +10,7 @@ import (
 	contentservice "github.com/gitpod-io/gitpod/installer/pkg/components/content-service"
 	"github.com/gitpod-io/gitpod/installer/pkg/components/dashboard"
 	"github.com/gitpod-io/gitpod/installer/pkg/components/gitpod"
+	imagebuildermk3 "github.com/gitpod-io/gitpod/installer/pkg/components/image-builder-mk3"
 	"github.com/gitpod-io/gitpod/installer/pkg/components/proxy"
 	registryfacade "github.com/gitpod-io/gitpod/installer/pkg/components/registry-facade"
 	"github.com/gitpod-io/gitpod/installer/pkg/components/server"
@@ -24,6 +25,7 @@ var MetaObjects = common.CompositeRenderFunc(
 	contentservice.Objects,
 	proxy.Objects,
 	dashboard.Objects,
+	imagebuildermk3.Objects,
 	server.Objects,
 	wsmanagerbridge.Objects,
 )

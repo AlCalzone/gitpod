@@ -28,7 +28,7 @@ func configmap(ctx *common.RenderContext) ([]runtime.Object, error) {
 
 	fc, err := json.MarshalIndent(cscfg, "", " ")
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal blobserve config: %w", err)
+		return nil, fmt.Errorf("failed to marshal content-service config: %w", err)
 	}
 
 	return []runtime.Object{&corev1.ConfigMap{

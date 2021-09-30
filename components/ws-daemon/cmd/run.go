@@ -59,7 +59,7 @@ var runCmd = &cobra.Command{
 
 		server := grpc.NewServer(grpcOpts...)
 		dmn.Register(server)
-		lis, err := net.Listen("tcp", cfg.Service.Addr)
+		lis, err := net.Listen("tcp", cfg.Service.Addr.Addr)
 		if err != nil {
 			log.WithError(err).Fatalf("cannot listen on %s", cfg.Service.Addr)
 		}

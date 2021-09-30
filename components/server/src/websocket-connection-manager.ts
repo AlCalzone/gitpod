@@ -79,9 +79,9 @@ export class WebsocketConnectionManager<C extends GitpodClient, S extends Gitpod
 
         const clientHeaderFields:ClientHeaderFields = {
             ip: expressReq.ips?.length > 0 ? expressReq.ips[0] : undefined,
-            userAgent: expressReq.get('user-agent'),
-            dnt: expressReq.get('dnt'),
-            clientRegion: expressReq.get("x-glb-client-region")
+            userAgent: expressReq.headers["user-agent"],
+            dnt: expressReq.headers.dnt instanceof Array ? expressReq.headers.dnt[0] : expressReq.headers.dnt,
+            clientRegion: expressReq.headers["x-glb-client-region"] instanceof Array ? expressReq.headers["x-glb-client-region"][0]: expressReq.headers["x-glb-client-region"]
         }
 
         gitpodServer.initialize(client, user, resourceGuard, clientHeaderFields);

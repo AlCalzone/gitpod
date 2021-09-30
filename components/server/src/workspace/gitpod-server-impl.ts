@@ -275,12 +275,6 @@ export class GitpodServerImpl<Client extends GitpodClient, Server extends Gitpod
         }
     }
 
-    protected anonymizeIP(ip: string) {
-        //anonymizes the passed IPv4 by replacing the final octet with zeros
-        let octets = ip.split('.');
-        return octets.length == 4 ? octets.slice(0,3).concat(["0"]).join(".") : undefined;
-    }
-
     public async updateLoggedInUser(partialUser: Partial<User>): Promise<User> {
         const user = this.checkUser('updateLoggedInUser');
         await this.guardAccess({ kind: "user", subject: user }, "update");

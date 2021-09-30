@@ -511,40 +511,6 @@ export class UserController {
         await this.userService.updateUserEnvVarsOnLogin(user, envVars);
         await this.userService.acceptCurrentTerms(user);
 
-        type Identities = {
-            github_slug?: String,
-            gitlab_slug?: String,
-            bitbucket_slug?: String
-        }
-
-        const slug = user.identities[0].authName;
-        let identities: Identities = {};
-        switch(user.identities[0].authProviderId) {
-            case "Public-GitHub": {
-                identities.github_slug = slug;
-            }
-            case "Public-GitLab": {
-                identities.gitlab_slug = slug;
-            }
-            case "Public-Bitbucket": {
-                identities.bitbucket_slug = slug;
-            }
-        }
-
-        this.analytics.identify({
-            userId: user.id,
-            traits: {
-                ...identities,
-                "email": User.getPrimaryEmail(user),
-                "full_name": user.fullName,
-                "created_at": user.creationDate,
-                "unsubscribed_onboarding": !user.additionalData?.emailNotificationSettings?.allowsOnboardingMail,
-                "unsubscribed_changelog": !user.additionalData?.emailNotificationSettings?.allowsChangelogMail,
-                "unsubscribed_devx": !user.additionalData?.emailNotificationSettings?.allowsDevXMail,
-                "blocked": user.blocked
-            }
-        });
-
         this.analytics.track({
             userId: user.id,
             event: "signup",

@@ -78,7 +78,7 @@ export class WebsocketConnectionManager<C extends GitpodClient, S extends Gitpod
         }
 
         const clientHeaderFields:ClientHeaderFields = {
-            ip: expressReq.ips[0],
+            ip: expressReq.ips?.length > 0 ? expressReq.ips[0] : undefined,
             userAgent: expressReq.get('user-agent'),
             dnt: expressReq.get('dnt'),
             clientRegion: expressReq.get("x-glb-client-region")

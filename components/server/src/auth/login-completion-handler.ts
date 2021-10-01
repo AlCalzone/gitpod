@@ -101,12 +101,15 @@ export class LoginCompletionHandler {
                 switch(value.authProviderId) {
                     case "Public-GitHub": {
                         identities.github_slug = value.authName;
+                        break;
                     }
                     case "Public-GitLab": {
                         identities.gitlab_slug = value.authName;
+                        break;
                     }
                     case "Public-Bitbucket": {
                         identities.bitbucket_slug = value.authName;
+                        break;
                     }
                 }
             });

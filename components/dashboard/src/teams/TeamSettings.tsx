@@ -50,7 +50,7 @@ export default function TeamSettings() {
             buttonText="Delete Team"
             buttonDisabled={teamSlug !== team!.slug}
             visible={modal}
-            warningText="Warning: this action cannot be reversed."
+            warningText="Warning: This action cannot be reversed."
             onClose={close}
             onConfirm={deleteTeam}
         >

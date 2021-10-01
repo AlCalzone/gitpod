@@ -84,7 +84,7 @@ export class LoginCompletionHandler {
 
             //TODO: Remove identity logs
             user.identities.forEach((value) => {
-                log.info(JSON.stringify({
+                log.info("identity:" + JSON.stringify({
                     "authProviderId": value.authProviderId,
                     "authId": value.authId,
                     "authName": value.authName,
@@ -93,7 +93,7 @@ export class LoginCompletionHandler {
             });
 
             //TODO Remove emailNotification Logs
-            log.info(JSON.stringify(user.additionalData?.emailNotificationSettings));
+            log.info("notification preferences:" + JSON.stringify(user.additionalData?.emailNotificationSettings));
 
             //fill identities from user
             let identities: { github_slug?: String, gitlab_slug?: String, bitbucket_slug?: String } = {};

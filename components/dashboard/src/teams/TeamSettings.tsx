@@ -9,22 +9,24 @@ import { useLocation } from "react-router";
 import ConfirmationModal from "../components/ConfirmationModal";
 import { PageWithSubMenu } from "../components/PageWithSubMenu";
 import { getGitpodService, gitpodHostUrl } from "../service/service";
+import { UserContext } from "../user-context";
 import { getCurrentTeam, TeamsContext } from "./teams-context";
 
 export default function TeamSettings() {
     const [modal, setModal] = useState(false);
     const [teamSlug, setTeamSlug] = useState('');
     const { teams } = useContext(TeamsContext);
+    const { user } = useContext(UserContext);
     const location = useLocation();
     const team = getCurrentTeam(location, teams);
 
     const close = () => setModal(false);
 
     const deleteTeam = async () => {
-        if (!team) {
+        if (!team || !user) {
             return
         }
-        await getGitpodService().server.deleteTeam(team.id);
+        await getGitpodService().server.deleteTeam(team.id, user.id);
         document.location.href = gitpodHostUrl.asSettings().toString();
     };
 

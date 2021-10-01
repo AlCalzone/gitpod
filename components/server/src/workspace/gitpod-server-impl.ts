@@ -1555,7 +1555,7 @@ export class GitpodServerImpl<Client extends GitpodClient, Server extends Gitpod
         return this.projectsService.deleteProject(projectId);
     }
 
-    public async deleteTeam(teamId: string): Promise<void> {
+    public async deleteTeam(teamId: string, userId: string): Promise<void> {
         const user = this.checkAndBlockUser("deleteTeam");
         await this.guardTeamOperation(teamId, "delete");
 
@@ -1563,6 +1563,11 @@ export class GitpodServerImpl<Client extends GitpodClient, Server extends Gitpod
         const teamProjects = await this.projectsService.getTeamProjects(teamId);
         teamProjects.forEach(project => {
             this.deleteProject(project.id);
+        })
+
+        const teamMembers = await this.teamDB.findMembersByTeam(teamId);
+        teamMembers.forEach(member => {
+            this.removeTeamMember(teamId, userId);
         })
 
         return this.analytics.track({

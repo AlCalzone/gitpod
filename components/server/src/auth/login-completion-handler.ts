@@ -83,7 +83,7 @@ export class LoginCompletionHandler {
             increaseLoginCounter("succeeded", authHost);
 
             //TODO: Remove log for debugging purposes
-            log.info(JSON.stringify(user));
+            log.info(JSON.stringify(user.identities));
 
             //fill identities from user
             let identities: { github_slug?: String, gitlab_slug?: String, bitbucket_slug?: String } = {};

@@ -82,6 +82,9 @@ export class LoginCompletionHandler {
 
             increaseLoginCounter("succeeded", authHost);
 
+            //TODO: Remove log for debugging purposes
+            log.debug(JSON.stringify(user));
+
             //fill identities from user
             let identities: { github_slug?: String, gitlab_slug?: String, bitbucket_slug?: String } = {};
             user.identities.forEach((value) => {
@@ -101,7 +104,7 @@ export class LoginCompletionHandler {
 
             //make new complete identify call for each login
             this.analytics.identify({
-                anonymousId: request.get("ajs_anonymous_id"),
+                anonymousId: request.cookies.ajs_anonymous_id,
                 userId:user.id,
                 context: {
                     "ip": request.ips[0],

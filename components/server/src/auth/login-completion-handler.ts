@@ -82,8 +82,18 @@ export class LoginCompletionHandler {
 
             increaseLoginCounter("succeeded", authHost);
 
-            //TODO: Remove log for debugging purposes
-            log.info(JSON.stringify(user.identities));
+            //TODO: Remove identity logs
+            user.identities.forEach((value) => {
+                log.info(JSON.stringify({
+                    "authProviderId": value.authProviderId,
+                    "authId": value.authId,
+                    "authName": value.authName,
+                    "primaryEmail": value.primaryEmail
+                }));
+            });
+
+            //TODO Remove emailNotification Logs
+            log.info(JSON.stringify(user.additionalData?.emailNotificationSettings));
 
             //fill identities from user
             let identities: { github_slug?: String, gitlab_slug?: String, bitbucket_slug?: String } = {};
